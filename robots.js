@@ -103,12 +103,12 @@
   });
 
   Observable.method( 'update', function update( message ) {
-    var name, body;
-    if ( message && typeof message.name === 'string' && message.body ) {
+    var name, content;
+    if ( message && typeof message.name === 'string' && message.content ) {
       name = message.name;
-      body = message.body;
+      content = message.content;
       if ( this.updates.hasOwnProperty( name ) ) {
-        this.updates[ name ].call( this, body );
+        this.updates[ name ].call( this, content );
       }
     }
   });
