@@ -37,7 +37,7 @@
   });
 
   // -- Observable interface (abstract), both Observer & Subject
-  // uber interface for Mars, Robot & ControlPanel
+  // uber interface for Robot & ControlPanel
   function Observable() {}
 
   // I prefer put the initialization code in a specific 'init' method instead
@@ -142,36 +142,26 @@
           robotsFieldSets = _d.querySelectorAll( '.robot' ),
           tmpFieldSet, tmpRobot;
 
-        // init Mars -- TODO sanitize
-        this.mars = new Mars( marsDim );
+        // inform robots of Mars' dimensions - TODO sanitize
+        Robots.marsDimensions = marsDim;
 
         // init Robots & send messages
         for ( i = 0, l = robotsFieldSets.length; i < l; i += 1 ) {
           tmpFieldSet = robotsFieldSets[ i ];
           // store ref to UI
           this.robotsFieldSets.push( tmpFieldSet );
-          // init robots - TODO sanitize
+          // init robots
           tmpRobot = new Robot();
           // store ref to robot - see reset()
           this.robots.push( tmpRobot );
-          // TODO send message to Robot
-          // tmpFieldSet.querySelector( '#robot-position' ).value
+          // TODO sanitize
+          tmpRobot.move( tmpFieldSet.querySelector( '#robot-position' ).value );
         }
       }
 
       __controlPanel = this;
     }
     return __controlPanel;
-  }
-
-  // -- Mars interface, singleton
-  function Mars( dimensions ) {
-    if ( !__mars ) {
-      this.uber.init.call( this );
-      this.init( dimensions );
-      __mars = this;
-    }
-    return __mars;
   }
 
   function Robot() {
@@ -181,24 +171,33 @@
       value: {
         x: 0,
         y: 0,
-        orientation: 'N'
+        orientation: 'N',
+        instruction: ''
       }
     });
     _O.defineProperty( this, 'nextPosition', {
       value: {
         x: 0,
         y: 0,
-        orientation: 'N'
+        orientation: 'N',
+        instruction: ''
       }
     });
-    _O.defineProperty( this, 'lost', {
-      value: false
+    _O.defineProperty( this, 'scent', {
+      value: {}
     });
 
     // here observable code
   }
 
   // Robot static prop, only robots manage those tables, controlPanel dont have access
+  _O.defineProperty( Robot, 'marsDimensions', {
+    set: function( dimensions ) {
+      var dimensions = dimensions.split[' '];
+      this.marsX = dimensions[ 0 ];
+      this.marsY = dimensions[ 1 ];
+    }
+  });
   _O.defineProperty( Robot, 'scentTable', {
     value: {}
   });
@@ -206,12 +205,12 @@
     value: {}
   });
   Robot.addInstruction = function addInstruction( instruction, fn ) {
-    if ( !Robot.instructionsTable.hasOwnProperty( instruction ) ) {
-      Robot.instructionsTable[ instruction ] = fn;
+    if ( !this.instructionsTable.hasOwnProperty( instruction ) ) {
+      this.instructionsTable[ instruction ] = fn;
     }
   };
   Robot.isInstruction = function isInstruction( instruction ) {
-    return !!Robot.instructionsTable.hasOwnProperty( instruction );
+    return !!this.instructionsTable.hasOwnProperty( instruction );
   };
   Robot.isInScentTable = function isInScentTable( position ) {
     var
@@ -220,8 +219,8 @@
       orientation = position.orientation,
       pointer;
 
-    if ( Robot.scentTable[ x ] ) {
-      pointer = Robot.scentTable[ x ];
+    if ( this.scentTable[ x ] ) {
+      pointer = this.scentTable[ x ];
       if ( pointer[ y ] ) {
         pointer = pointer[ y ];
         if ( pointer[ orientation ] ) {
@@ -234,51 +233,73 @@
     }
     return false;
   };
+  Robot.storeScent = function storeScent( position ) {
+    var
+      x = position.x,
+      y = position.y,
+      orientation = position.orientation
+      pointer;
+
+    if ( !this.scentTable[ x ] ) {
+      this.scentTable[ x ] = {};
+    }
+    pointer = this.scentTable[ x ];
+
+    if ( !pointer[ y ] ) {
+      pointer[ y ] = {};
+    }
+    pointer = pointer[ y ];
+
+    if ( !pointer[ orientation ] ) {
+      pointer[ orientation ] = {};
+    }
+    pointer = pointer[ orientation ];
+
+    if ( !pointer[ instruction ] ) {
+      pointer[ instruction ] = {};
+    }
+  };
+  Robot.isLost = function isLost( position ) {
+    var
+      x = position.x,
+      y = position.y;
+
+    return !!( x < 0 || x > this.marsX || y < 0 || y > this.marsY );
+  };
 
 
   // prototype chains
   ControlPanel.inherits( Observable );
-  Mars.inherits( Observable );
   Robot.inherits( Observable );
 
 
   // -- Robot interface
-  Robot.method( 'move', function move( instructionSequence ) {
-    var instruction, nextPosition;
-    // possible that the instruction equals the whole instructionSequence
-    for ( i = 0, l = instructionSequence.length; i < l; i += 1 ) {
-      j = i + 1;
-      lbis = l - i;
-      for ( ; j < lbis; j += 1 ) {
-        instruction = instructionSequence.slice( i, j );
-        if ( Robot.isInstruction( instruction ) ) {
-          // move robot following the instruction, detecting scents
-          Robot.instructionsTable[ instruction ].call( this );
-          // robot @ its new position (maybe lost?) -> send message to Mars
-
-        } // else instruction ignored
-        // get new instruction
-        i = j;
-        break;
-      }
-    }
-  });
-
   // basic moves - compute next position
   // increment: 3, -6
   Robot.method( 'rotate', function rotate( increment ){
+    // TODO
     return this;
   });
 
   // increment: 3, 6
   // direction 1 or -1 (forward / backward)
-  Robot.method( 'translate', function translate( increment, direction ){
+  // default forward/1
+  Robot.method( 'translate', function translate( options ){
     // always keep orientation
     // default one step by one & forward (ie direction = 1)
     var
-      increment = increment || 1,
-      direction = direction || 1,
-      nextPosition = this.nextPosition;
+      increment = options.increment || 1,
+      direction = options.direction || 1,
+      dirChar = direction === 1 ? 'F' : 'B',
+      nextPosition = this.nextPosition,
+      // before moving, store scentPosition, just in case
+      scentPosition = {};
+
+    for ( i in this.position ) {
+      scentPosition[ i ] = this.position[ i ];
+    }
+
+    nextPosition.instruction = dirChar;
 
     if ( nextPosition.orientation === 'N' || nextPosition.orientation === 'S' ) {
       if ( nextPosition.orientation === 'N' ) {
@@ -300,9 +321,15 @@
         nextPosition[ i ] = this.position[ i ];
       }
     } else {
-      // valid move
+      // valid, move
       for ( i in this.position ) {
         this.position[ i ] = nextPosition[ i ];
+      }
+      // maybe lost for the first time? if so, store scent
+      if ( !this.scent && Robot.isLost( this.position ) ) {
+        Robot.storeScent( scentPosition );
+        this.scent = scentPosition;
+        // then we left the robot continues its move
       }
     }
 
@@ -314,20 +341,47 @@
     return this;
   });
 
-  // - Mars interface
-  Mars.method( 'init', function init( dimensions ){
+  Robot.method( 'move', function move( instructionSequence ) {
+    var instruction, nextPosition;
+    // store in case of lost
+    this.instructionSequence = instructionSequence;
 
+    // possible that the instruction equals the whole instructionSequence
+    for ( i = 0, l = instructionSequence.length; i < l; i += 1 ) {
+      j = i + 1;
+      lbis = l - i;
+      for ( ; j < lbis; j += 1 ) {
+        instruction = instructionSequence.slice( i, j );
+        if ( Robot.isInstruction( instruction ) ) {
+          // move robot following the instruction => robot @ its new position (maybe lost?)
+          Robot.instructionsTable[ instruction ].call( this );
+          // find another instruction in the seq
+          i = j;
+          break;
+        } // else, enlarge search window
+      }
+      // if scent, no need to continue further in seq
+      if ( this.scent ) {
+        break;
+      }
+    }
+
+    if ( this.scent ) {
+      // send message to ControlPanel with this.scent
+    } else {
+      // send message with this.position
+    }
   });
 
-  // DEBUG
 
+  // DEBUG
   // now create instructions using moves; 'this' is a robot instance
   // constraint: must start with a different letter
   Robot.addInstruction( 'F', function forward1(){
-    this.forward();
+    this.translate();
   });
-  Robot.addInstruction( '3F', function forward3(){
-    //this.forward( 3 );
+  Robot.addInstruction( '3B', function backward3(){
+    //this.translate( { increment: 3, direction: -1 } );
   });
 
 
