@@ -123,7 +123,43 @@
     if ( !__controlPanel ) {
       // use call, otherwise create props in prototype of uber!
       this.uber.init.call( this );
-      this.init();
+
+      _O.defineProperty( this, 'output', {
+        value: ''
+      });
+      _O.defineProperty( this, 'mars', {
+        value: {}
+      });
+      _O.defineProperty( this, 'robots', {
+        value: []
+      });
+      _O.defineProperty( this, 'robotsFieldSets', {
+        value: []
+      });
+
+      this.start = function start(){
+        var
+          marsDim = _w.querySelector( '#mars-dimensions' ).value,
+          robotsFieldSets = _w.querySelectorAll( '.robot' ),
+          tmpFieldSet, tmpRobot;
+
+        // init Mars -- TODO sanitize
+        this.mars = new Mars( marsDim );
+
+        // init Robots & send messages
+        for ( i = 0, l = robotsFieldSets.length; i < l; i += 1 ) {
+          tmpFieldSet = robotsFieldSets[ i ];
+          // store ref to UI
+          this.robotsFieldSets.push( tmpFieldSet );
+          // init robots - TODO sanitize
+          tmpRobot = new Robot();
+          // store ref to robot - see reset()
+          this.robots.push( tmpRobot );
+          // TODO send message to Robot
+          // tmpFieldSet.querySelector( '#robot-position' ).value
+        }
+      }
+
       __controlPanel = this;
     }
     return __controlPanel;
@@ -139,54 +175,65 @@
     return __mars;
   }
 
-  function Robot( position ) {
+  function Robot() {
     this.uber.init.call( this );
-    this.init( position );
+    // this.init();
+
+    _O.defineProperty( this, 'x', {
+      value: 0
+    });
+    _O.defineProperty( this, 'y', {
+      value: 0
+    });
+    _O.defineProperty( this, 'orientation', {
+      value: 'N'
+    });
+    _O.defineProperty( this, 'lost', {
+      value: false
+    });
+
+    // here observable code
   }
 
+  // static, only Robots manage the scentTable, ControlPanel dont have access
+  _O.defineProperty( Robot, 'scentTable', {
+    value: {}
+  });
+
+  // prototype chains
   ControlPanel.inherits( Observable );
   Mars.inherits( Observable );
   Robot.inherits( Observable );
 
   // -- ControlPanel interface
-  ControlPanel.method( 'init', function init() {
-    _O.defineProperty( this, 'output', {
-      value: ''
-    });
-    _O.defineProperty( this, 'mars', {});
-    _O.defineProperty( this, 'robots', {
-      value: []
-    });
-    _O.defineProperty( this, 'robotsFieldSets', {
-      value: []
-    });
-  });
-
-  ControlPanel.method( 'start', function start(){
-    var
-      marsDim = _w.querySelector( '#mars-dimensions' ).value,
-      robotsFieldSets = _w.querySelectorAll( '.robot' ),
-      tmpFieldSet, tmpRobot;
-
-    // init Mars -- TODO sanitize
-    this.mars = new Mars( marsDim );
-
-    // init Robots
-    for ( i = 0, l = robotsFieldSets.length; i < l; i += 1 ) {
-      tmpFieldSet = robotsFieldSets[ i ];
-      // store ref to UI
-      this.robotsFieldSets.push( tmpFieldSet );
-      // init robots - TODO sanitize
-      tmpRobot = new Robot( tmpFieldSet.querySelector( '#robot-position' ).value );
-      // store ref to robot - see reset()
-      this.robots.push( tmpRobot );
-    }
-  });
 
 
   // -- Robot interface
-  Robot.method( 'init', function init() {
+  //Robot.method( 'init', function init() {});
 
+  Robot.method( 'updatePosition', function updatePosition( instruction ) {
+    
   });
+
+  Robot.method( 'isInScentTable', function isInScentTable( position ) {
+    var
+      position = position.split(' '),
+      x = position[ 0 ],
+      y = position[ 1 ],
+      orientation = position[ 2 ],
+      pointer;
+
+    if ( Robot.scentTable[ x ] ) {
+      pointer = Robot.scentTable[ x ];
+      if ( pointer[ y ] ) {
+        pointer = pointer[ y ];
+        if ( pointer[ orientation ] ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  });
+
 
 })( this, this.document );
