@@ -43,7 +43,6 @@
   Observable.method( 'init', function init( options ) {
     _O.defineProperty( this, 'updates', {
       value: {}
-      }
     });
     _O.defineProperty( this, 'observables', {
       value: []
@@ -112,9 +111,7 @@
         this.updates[ name ].call( this, body );
       }
     }
-
-    // invalid or mismatch
-    return null;
   });
+
 
 })( this, this.document );
