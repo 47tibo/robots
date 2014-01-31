@@ -5,7 +5,10 @@
     _O = _w.Object,
 
     // misc vars
-    i, l;
+    i, l,
+
+    // singletons, private
+    __controlPanel, __mars;
 
   // -- extends Function for inheritance mechanisms
   // D. Crockford 'method' sugar
@@ -40,7 +43,7 @@
 
   // I prefer put the initialization code in a specific 'init' method instead
   // in the constructor, here 'Observable' -> less coupling and separation of concerns
-  Observable.method( 'init', function init( options ) {
+  Observable.method( 'init', function init() {
     _O.defineProperty( this, 'updates', {
       value: {}
     });
@@ -112,6 +115,27 @@
       }
     }
   });
+
+  // -- all other interfaces inherits from Observable
+  function ControlPanel() {
+    // use call, otherwise create props in prototype of uber!
+    this.uber.init.call( this );
+    this.init();
+  }
+  function Mars() {
+    this.uber.init.call( this );
+    this.init();
+  }
+  function Robot() {
+    this.uber.init.call( this );
+    this.init();
+  }
+
+  ControlPanel.inherits( Observable );
+  Mars.inherits( Observable );
+  Robot.inherits( Observable );
+
+  // -- ControlPanel interface
 
 
 })( this, this.document );
