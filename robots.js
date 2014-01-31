@@ -117,15 +117,28 @@
   });
 
   // -- all other interfaces inherits from Observable
+
+  // singleton
   function ControlPanel() {
-    // use call, otherwise create props in prototype of uber!
-    this.uber.init.call( this );
-    this.init();
+    if ( !__controlPanel ) {
+      // use call, otherwise create props in prototype of uber!
+      this.uber.init.call( this );
+      this.init();
+      __controlPanel = this;
+    }
+    return __controlPanel;
   }
+
+  // singleton
   function Mars() {
-    this.uber.init.call( this );
-    this.init();
+    if ( !__mars ) {
+      this.uber.init.call( this );
+      this.init();
+      __mars = this;
+    }
+    return __mars;
   }
+
   function Robot() {
     this.uber.init.call( this );
     this.init();
@@ -136,6 +149,38 @@
   Robot.inherits( Observable );
 
   // -- ControlPanel interface
+  ControlPanel.method( 'init', function init() {
+    _O.defineProperty( this, 'output', {
+      value: ''
+    });
+    _O.defineProperty( this, 'mars', {});
+    _O.defineProperty( this, 'robots', {
+      value: []
+    });
+    _O.defineProperty( this, 'robotsFieldSets', {
+      value: []
+    });
+  });
 
+  ControlPanel.method( 'start', function start(){
+    var
+      marsDim = _w.querySelector( '#mars-dimensions' ).value,
+      robotsFieldSets = _w.querySelectorAll( '.robot' ),
+      tmpFieldSet, tmpRobot;
+
+    // init Mars -- TODO sanitize
+    this.mars = new Mars( marsDim );
+
+    // init Robots
+    for ( i = 0, l = robotsFieldSets.length; i < l; i += 1 ) {
+      tmpFieldSet = robotsFieldSets[ i ];
+      // store ref to UI
+      this.robotsFieldSets.push( tmpFieldSet );
+      // init robots - TODO sanitize
+      tmpRobot = new Robot( tmpFieldSet.querySelector( '#robot-position' ).value );
+      // store ref to robot - see reset()
+      this.robots.push( tmpRobot );
+    }
+  });
 
 })( this, this.document );
