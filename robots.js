@@ -130,18 +130,18 @@
   }
 
   // singleton
-  function Mars() {
+  function Mars( dimensions ) {
     if ( !__mars ) {
       this.uber.init.call( this );
-      this.init();
+      this.init( dimensions );
       __mars = this;
     }
     return __mars;
   }
 
-  function Robot() {
+  function Robot( position ) {
     this.uber.init.call( this );
-    this.init();
+    this.init( position );
   }
 
   ControlPanel.inherits( Observable );
@@ -181,6 +181,12 @@
       // store ref to robot - see reset()
       this.robots.push( tmpRobot );
     }
+  });
+
+
+  // -- Robot interface
+  Robot.method( 'init', function init() {
+
   });
 
 })( this, this.document );
