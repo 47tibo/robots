@@ -5,7 +5,7 @@
     _O = _w.Object,
 
     // misc vars
-    i, l,
+    i, j, l, lbis,
 
     // singletons, private
     __controlPanel, __mars;
@@ -25,14 +25,13 @@
     // proxy constructor pattern, Stoyan Stefanov
     // I add a little more to have a nice tree in DevTool
     // toString() will trim spaces if any
-    var name = this.toString().match( /\s([^\(]+)/ )[ 1 ],
-      proxy = _w.eval( 'function ' + name + '(){}' ),
-      thisProto = this.prototype,
-      uberProto = uber.prototype;
-    proxy.prototype = uberProto;
-    thisProto = new proxy();
-    thisProto.constructor = this;
-    thisProto.uber = uberProto;
+    var name = this.toString().match( /\s([^\(]+)/ )[ 1 ];
+    _w.eval( 'var proxy = function ' + name + '(){}' );
+
+    proxy.prototype = uber.prototype;
+    this.prototype = new proxy();
+    this.prototype.constructor = this;
+    this.prototype.uber = uber.prototype;
 
     return this;
   });
@@ -118,7 +117,7 @@
 
   // -- all other interfaces inherits from Observable
 
-  // singleton
+  // ControlPanel interface, singleton
   function ControlPanel() {
     if ( !__controlPanel ) {
       // use call, otherwise create props in prototype of uber!
@@ -139,8 +138,8 @@
 
       this.start = function start(){
         var
-          marsDim = _w.querySelector( '#mars-dimensions' ).value,
-          robotsFieldSets = _w.querySelectorAll( '.robot' ),
+          marsDim = _d.querySelector( '#mars-dimensions' ).value,
+          robotsFieldSets = _d.querySelectorAll( '.robot' ),
           tmpFieldSet, tmpRobot;
 
         // init Mars -- TODO sanitize
@@ -169,7 +168,7 @@
   function Mars( dimensions ) {
     if ( !__mars ) {
       this.uber.init.call( this );
-      this.init( dimensions );
+      // this.init( dimensions );
       __mars = this;
     }
     return __mars;
@@ -177,16 +176,20 @@
 
   function Robot() {
     this.uber.init.call( this );
-    // this.init();
 
-    _O.defineProperty( this, 'x', {
-      value: 0
+    _O.defineProperty( this, 'position', {
+      value: {
+        x: 0,
+        y: 0,
+        orientation: 'N'
+      }
     });
-    _O.defineProperty( this, 'y', {
-      value: 0
-    });
-    _O.defineProperty( this, 'orientation', {
-      value: 'N'
+    _O.defineProperty( this, 'nextPosition', {
+      value: {
+        x: 0,
+        y: 0,
+        orientation: 'N'
+      }
     });
     _O.defineProperty( this, 'lost', {
       value: false
@@ -195,7 +198,7 @@
     // here observable code
   }
 
-  // static, only Robots manage those tables, ControlPanel dont have access
+  // Robot static prop, only robots manage those tables, controlPanel dont have access
   _O.defineProperty( Robot, 'scentTable', {
     value: {}
   });
@@ -207,28 +210,14 @@
       Robot.instructionsTable[ instruction ] = fn;
     }
   };
-
-  // prototype chains
-  ControlPanel.inherits( Observable );
-  Mars.inherits( Observable );
-  Robot.inherits( Observable );
-
-  // -- ControlPanel interface
-
-
-  // -- Robot interface
-  //Robot.method( 'init', function init() {});
-
-  Robot.method( 'updatePosition', function updatePosition( instruction ) {
-
-  });
-
-  Robot.method( 'isInScentTable', function isInScentTable( position ) {
+  Robot.isInstruction = function isInstruction( instruction ) {
+    return !!Robot.instructionsTable.hasOwnProperty( instruction );
+  };
+  Robot.isInScentTable = function isInScentTable( position ) {
     var
-      position = position.split(' '),
-      x = position[ 0 ],
-      y = position[ 1 ],
-      orientation = position[ 2 ],
+      x = position.x,
+      y = position.y,
+      orientation = position.orientation,
       pointer;
 
     if ( Robot.scentTable[ x ] ) {
@@ -236,50 +225,101 @@
       if ( pointer[ y ] ) {
         pointer = pointer[ y ];
         if ( pointer[ orientation ] ) {
-          return true;
+          pointer = pointer[ orientation ];
+          if ( pointer[ instruction ] ) {
+            return true;
+          }
         }
       }
     }
     return false;
+  };
+
+
+  // prototype chains
+  ControlPanel.inherits( Observable );
+  Mars.inherits( Observable );
+  Robot.inherits( Observable );
+
+
+  // -- Robot interface
+  Robot.method( 'move', function move( instructionSequence ) {
+    var instruction, nextPosition;
+    // possible that the instruction equals the whole instructionSequence
+    for ( i = 0, l = instructionSequence.length; i < l; i += 1 ) {
+      j = i + 1;
+      lbis = l - i;
+      for ( ; j < lbis; j += 1 ) {
+        instruction = instructionSequence.slice( i, j );
+        if ( Robot.isInstruction( instruction ) ) {
+          // move robot following the instruction, detecting scents
+          Robot.instructionsTable[ instruction ].call( this );
+          // robot @ its new position (maybe lost?) -> send message to Mars
+
+        } // else instruction ignored
+        // get new instruction
+        i = j;
+        break;
+      }
+    }
   });
 
-  // basic moves
+  // basic moves - compute next position
   // increment: 3, -6
   Robot.method( 'rotate', function rotate( increment ){
-
+    return this;
   });
 
   // increment: 3, 6
   Robot.method( 'forward', function forward( increment ){
     // always keep orientation
-    if ( this.orientation === 'N' || this.orientation === 'S' ) {
-      if ( this.orientation === 'N' ) {
-        this.y += 1;
+    var nextPosition = this.nextPosition;
+
+    if ( nextPosition.orientation === 'N' || nextPosition.orientation === 'S' ) {
+      if ( nextPosition.orientation === 'N' ) {
+        nextPosition.y += 1;
       } else {
-        this.y -= 1;
+        nextPosition.y -= 1;
       }
     } else {
-      if ( this.orientation === 'E' ) {
-        this.x += 1;
+      if ( nextPosition.orientation === 'E' ) {
+        nextPosition.x += 1;
       } else {
-        this.x -= 1;
+        nextPosition.x -= 1;
       }
     }
 
-    if ( typeof increment === 'number' ) {
-      increment -= 1;
-      if ( increment ) {
-        forward( increment );
+    if ( Robot.isInScentTable( nextPosition ) ) {
+      // go a move backward
+      for ( i in this.position ) {
+        nextPosition[ i ] = this.position[ i ];
+      }
+    } else {
+      // valid move
+      for ( i in this.position ) {
+        this.position[ i ] = nextPosition[ i ];
       }
     }
+
+    if ( typeof increment === 'number' && (increment -= 1) > 0 ) {
+      forward( increment );
+    }
+
+    // in any case return case for chaining
+    return this;
   });
 
   // now create instructions using moves; 'this' is a robot instance
+  // constraint: must start with a different letter
   Robot.addInstruction( 'F', function forward1(){
     this.forward();
   });
   Robot.addInstruction( '3F', function forward3(){
-    this.forward( 3 );
+    //this.forward( 3 );
   });
+
+
+  _w.ControlPanel = ControlPanel;
+  _w.Robot = Robot;
 
 })( this, this.document );
