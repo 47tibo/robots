@@ -195,10 +195,18 @@
     // here observable code
   }
 
-  // static, only Robots manage the scentTable, ControlPanel dont have access
+  // static, only Robots manage those tables, ControlPanel dont have access
   _O.defineProperty( Robot, 'scentTable', {
     value: {}
   });
+  _O.defineProperty( Robot, 'instructionsTable', {
+    value: {}
+  });
+  Robot.addInstruction = function addInstruction( instruction, fn ) {
+    if ( !Robot.instructionsTable.hasOwnProperty( instruction ) ) {
+      Robot.instructionsTable[ instruction ] = fn;
+    }
+  };
 
   // prototype chains
   ControlPanel.inherits( Observable );
@@ -212,7 +220,7 @@
   //Robot.method( 'init', function init() {});
 
   Robot.method( 'updatePosition', function updatePosition( instruction ) {
-    
+
   });
 
   Robot.method( 'isInScentTable', function isInScentTable( position ) {
@@ -235,5 +243,43 @@
     return false;
   });
 
+  // basic moves
+  // increment: 3, -6
+  Robot.method( 'rotate', function rotate( increment ){
+
+  });
+
+  // increment: 3, 6
+  Robot.method( 'forward', function forward( increment ){
+    // always keep orientation
+    if ( this.orientation === 'N' || this.orientation === 'S' ) {
+      if ( this.orientation === 'N' ) {
+        this.y += 1;
+      } else {
+        this.y -= 1;
+      }
+    } else {
+      if ( this.orientation === 'E' ) {
+        this.x += 1;
+      } else {
+        this.x -= 1;
+      }
+    }
+
+    if ( typeof increment === 'number' ) {
+      increment -= 1;
+      if ( increment ) {
+        forward( increment );
+      }
+    }
+  });
+
+  // now create instructions using moves; 'this' is a robot instance
+  Robot.addInstruction( 'F', function forward1(){
+    this.forward();
+  });
+  Robot.addInstruction( '3F', function forward3(){
+    this.forward( 3 );
+  });
 
 })( this, this.document );
