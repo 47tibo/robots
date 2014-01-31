@@ -164,11 +164,11 @@
     return __controlPanel;
   }
 
-  // singleton
+  // -- Mars interface, singleton
   function Mars( dimensions ) {
     if ( !__mars ) {
       this.uber.init.call( this );
-      // this.init( dimensions );
+      this.init( dimensions );
       __mars = this;
     }
     return __mars;
@@ -271,21 +271,26 @@
   });
 
   // increment: 3, 6
-  Robot.method( 'forward', function forward( increment ){
+  // direction 1 or -1 (forward / backward)
+  Robot.method( 'translate', function translate( increment, direction ){
     // always keep orientation
-    var nextPosition = this.nextPosition;
+    // default one step by one & forward (ie direction = 1)
+    var
+      increment = increment || 1,
+      direction = direction || 1,
+      nextPosition = this.nextPosition;
 
     if ( nextPosition.orientation === 'N' || nextPosition.orientation === 'S' ) {
       if ( nextPosition.orientation === 'N' ) {
-        nextPosition.y += 1;
+        nextPosition.y += direction;
       } else {
-        nextPosition.y -= 1;
+        nextPosition.y -= direction;
       }
     } else {
       if ( nextPosition.orientation === 'E' ) {
-        nextPosition.x += 1;
+        nextPosition.x += direction;
       } else {
-        nextPosition.x -= 1;
+        nextPosition.x -= direction;
       }
     }
 
@@ -302,12 +307,19 @@
     }
 
     if ( typeof increment === 'number' && (increment -= 1) > 0 ) {
-      forward( increment );
+      forward( increment, direction );
     }
 
     // in any case return case for chaining
     return this;
   });
+
+  // - Mars interface
+  Mars.method( 'init', function init( dimensions ){
+
+  });
+
+  // DEBUG
 
   // now create instructions using moves; 'this' is a robot instance
   // constraint: must start with a different letter
