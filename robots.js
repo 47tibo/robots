@@ -147,8 +147,8 @@
           tmpFieldSet = robotsFieldSets[ i ];
           // store ref to UI
           this.robotsFieldSets.push( tmpFieldSet );
-          // init robots
-          tmpRobot = new Robot();
+          // init robots - sanitize
+          tmpRobot = new Robot( tmpFieldSet.querySelector( '#robot-position' ).value );
           // store ref to robot - see reset()
           this.robots.push( tmpRobot );
           // TODO sanitize
@@ -161,22 +161,24 @@
     return __controlPanel;
   }
 
-  function Robot() {
+  function Robot( position ) {
+    var position = position.split(' ');
+
     this.uber.init.call( this );
 
     _O.defineProperty( this, 'position', {
       value: {
-        x: 0,
-        y: 0,
-        orientation: 'N',
+        x: +position[ 0 ],
+        y: +position[ 1 ],
+        orientation: position[ 2 ],
         instruction: ''
       }
     });
     _O.defineProperty( this, 'nextPosition', {
       value: {
-        x: 0,
-        y: 0,
-        orientation: 'N',
+        x: +position[ 0 ],
+        y: +position[ 1 ],
+        orientation: position[ 2 ],
         instruction: ''
       }
     });
@@ -190,7 +192,7 @@
   // Robot static prop, only robots manage those tables, controlPanel dont have access
   _O.defineProperty( Robot, 'marsDimensions', {
     set: function( dimensions ) {
-      var dimensions = dimensions.split(' ');
+      dimensions = dimensions.split(' ');
       this.marsX = dimensions[ 0 ];
       this.marsY = dimensions[ 1 ];
     }
@@ -214,6 +216,7 @@
       x = position.x,
       y = position.y,
       orientation = position.orientation,
+      instruction = position.instruction,
       pointer;
 
     if ( this.scentTable[ x ] ) {
@@ -234,7 +237,8 @@
     var
       x = position.x,
       y = position.y,
-      orientation = position.orientation
+      orientation = position.orientation,
+      instruction = position.instruction,
       pointer;
 
     if ( !this.scentTable[ x ] ) {
@@ -285,7 +289,6 @@
     // always keep orientation
     // default one step by one & forward (ie direction = 1)
     var
-      increment = (options && options.increment) || 1,
       direction = (options && options.direction) || 1,
       dirChar = direction === 1 ? 'F' : 'B',
       nextPosition = this.nextPosition,
@@ -330,8 +333,8 @@
       }
     }
 
-    if ( typeof increment === 'number' && (increment -= 1) > 0 ) {
-      forward( increment, direction );
+    if ( options && (options.increment -= 1) > 0 ) {
+      this.translate( options );
     }
 
     // in any case return case for chaining
@@ -377,7 +380,7 @@
     this.translate();
   });
   Robot.addInstruction( '3B', function backward3(){
-    //this.translate( { increment: 3, direction: -1 } );
+    this.translate( { increment: 3, direction: -1 } );
   });
 
 
