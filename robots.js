@@ -129,7 +129,7 @@
         value: []
       });
       _O.defineProperty( this, 'robotsFieldSets', {
-        value: []
+        writable: true
       });
       _O.defineProperty( this, 'marsTxt', {
         writable: true
@@ -149,45 +149,62 @@
 
       // UI
       this.marsTxt = _d.querySelector( '#mars-dimensions' );
+      // cast into array
+      this.robotsFieldSets = [].slice.call( _d.querySelectorAll( '.robot' ), 0),
       this.newRobotBtn = _d.querySelector( '#new-robot' );
       this.startBtn = _d.querySelector( '#start' );
       this.resetBtn = _d.querySelector( '#reset' );
       this.outputTxt = _d.querySelector( '#output' );
+
       // events
       this.startBtn.addEventListener( 'click', function startRobots( e ){
         e.preventDefault();
         this.start();
       }.bind( this ));
 
+      this.newRobotBtn.addEventListener( 'click', function startRobots( e ){
+        e.preventDefault();
+        var newIndex = this.robotsFieldSets.length,
+          latestFieldSet = this.robotsFieldSets[ newIndex - 1 ],
+          newFieldSet = latestFieldSet.cloneNode( true );
+
+        newFieldSet.id = 'robot-' + newIndex;
+        // legend
+        newFieldSet.querySelector('legend').textContent = 'Robot' + newIndex;
+
+        // update array & append to DOM
+        this.robotsFieldSets.push( newFieldSet );
+        latestFieldSet.parentNode.insertBefore( newFieldSet, this.newRobotBtn );
+      }.bind( this ));
+
       this.start = function start(){
         var
           marsDim = this.marsTxt.value,
-          robotsFieldSets = _d.querySelectorAll( '.robot' ),
           tmpFieldSet, tmpRobot;
 
         // inform robots of Mars' dimensions - TODO sanitize
         Robot.marsDimensions = marsDim;
 
-        // init Robots & send messages
-        for ( var i = 0, l = robotsFieldSets.length; i < l; i += 1 ) {
-          tmpFieldSet = robotsFieldSets[ i ];
-          // store ref to UI
-          this.robotsFieldSets.push( tmpFieldSet );
-          // init robots - sanitize
-          tmpRobot = new Robot( tmpFieldSet.querySelector( '#robot-position' ).value );
+        // init robots
+        for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
+          tmpFieldSet = this.robotsFieldSets[ i ];
+          tmpRobot = new Robot( tmpFieldSet.querySelector( '#robot-position' ).value, i );
           // store ref to robot - see reset()
           this.robots.push( tmpRobot );
           // control panel observes robot subjects for 'status'
           tmpRobot.addObservable( this );
           // each robot observes CP for 'instructions'
           this.addObservable( tmpRobot );
+        }
 
-          // lets rock! sanitize
+        for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
+          tmpFieldSet = this.robotsFieldSets[ i ];
           this.notify({
             name: 'instructions',
-            content: tmpFieldSet.querySelector( '#robot-instruction' ).value
+            content: { val: tmpFieldSet.querySelector( '#robot-instruction' ).value, id: i }
           });
         }
+
       }
 
       var statusCount = 0;
@@ -207,11 +224,14 @@
     return __controlPanel;
   }
 
-  function Robot( position ) {
+  function Robot( position, id ) {
     var position = position.split(' ');
 
     this.uber.init.call( this );
 
+    _O.defineProperty( this, 'id', {
+      value: id
+    });
     _O.defineProperty( this, 'position', {
       value: {
         x: +position[ 0 ],
@@ -234,7 +254,9 @@
 
     // listen to any 'instructions'
     this.addUpdateFn( 'instructions', function moveOnInstructions( instructions ){
-      this.move( instructions );
+      if ( instructions.id === this.id ) {
+        this.move( instructions.val );
+      }
     });
   }
 
