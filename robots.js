@@ -101,6 +101,7 @@
     return this;
   });
 
+  // abstract
   Observable.method( 'update', function update( message ) {
     var name, content;
     if ( message && typeof message.name === 'string' && message.content ) {
@@ -121,10 +122,8 @@
       this.uber.init.call( this );
 
       _O.defineProperty( this, 'output', {
-        value: ''
-      });
-      _O.defineProperty( this, 'mars', {
-        value: {}
+        value: '',
+        writable: true
       });
       _O.defineProperty( this, 'robots', {
         value: []
@@ -132,10 +131,37 @@
       _O.defineProperty( this, 'robotsFieldSets', {
         value: []
       });
+      _O.defineProperty( this, 'marsTxt', {
+        writable: true
+      });
+      _O.defineProperty( this, 'newRobotBtn', {
+        writable: true
+      });
+      _O.defineProperty( this, 'startBtn', {
+        writable: true
+      });
+      _O.defineProperty( this, 'resetBtn', {
+        writable: true
+      });
+      _O.defineProperty( this, 'outputTxt', {
+        writable: true
+      });
+
+      // UI
+      this.marsTxt = _d.querySelector( '#mars-dimensions' );
+      this.newRobotBtn = _d.querySelector( '#new-robot' );
+      this.startBtn = _d.querySelector( '#start' );
+      this.resetBtn = _d.querySelector( '#reset' );
+      this.outputTxt = _d.querySelector( '#output' );
+      // events
+      this.startBtn.addEventListener( 'click', function startRobots( e ){
+        e.preventDefault();
+        this.start();
+      }.bind( this ));
 
       this.start = function start(){
         var
-          marsDim = _d.querySelector( '#mars-dimensions' ).value,
+          marsDim = this.marsTxt.value,
           robotsFieldSets = _d.querySelectorAll( '.robot' ),
           tmpFieldSet, tmpRobot;
 
@@ -151,10 +177,30 @@
           tmpRobot = new Robot( tmpFieldSet.querySelector( '#robot-position' ).value );
           // store ref to robot - see reset()
           this.robots.push( tmpRobot );
-          // TODO sanitize
-          tmpRobot.move( tmpFieldSet.querySelector( '#robot-instruction' ).value );
+          // control panel observes robot subjects for 'status'
+          tmpRobot.addObservable( this );
+          // each robot observes CP for 'instructions'
+          this.addObservable( tmpRobot );
+
+          // lets rock! sanitize
+          this.notify({
+            name: 'instructions',
+            content: tmpFieldSet.querySelector( '#robot-instruction' ).value
+          });
         }
       }
+
+      var statusCount = 0;
+      // listen to any robot's status
+      this.addUpdateFn( 'status', function updateOutput( status ){
+        // all messages are received synchronously
+        this.output += status + '\n';
+        statusCount += 1;
+        if ( statusCount === this.robots.length ) {
+          this.outputTxt.value = this.output;
+        }
+      });
+
 
       __controlPanel = this;
     }
@@ -186,7 +232,10 @@
       writable: true
     }); //undef
 
-    // here observable code
+    // listen to any 'instructions'
+    this.addUpdateFn( 'instructions', function moveOnInstructions( instructions ){
+      this.move( instructions );
+    });
   }
 
   // Robot static prop, only robots manage those tables, controlPanel dont have access
@@ -329,6 +378,7 @@
       if ( !this.scent && Robot.isLost( this.position ) ) {
         Robot.storeScent( scentPosition );
         this.scent = scentPosition;
+        // here possible to notify too
         // then we left the robot continues its move
       }
     }
@@ -341,16 +391,13 @@
     return this;
   });
 
-  Robot.method( 'move', function move( instructionSequence ) {
-    var instruction, nextPosition;
-    // store in case of lost
-    this.instructionSequence = instructionSequence;
+  Robot.method( 'move', function move( instructions ) {
+    var instruction, status, scent, position, j;
 
-    var j;
-    // possible that the instruction equals the whole instructionSequence
-    for ( var i = 0, l = instructionSequence.length; i < l; ) {
+    // possible that the instruction equals the whole instructions
+    for ( var i = 0, l = instructions.length; i < l; ) {
       for ( j = i + 1; j < l + 1; j += 1 ) {
-        instruction = instructionSequence.slice( i, j );
+        instruction = instructions.slice( i, j );
         if ( Robot.isInstruction( instruction ) ) {
           // move robot following the instruction => robot @ its new position (maybe lost?)
           Robot.instructionsTable[ instruction ].call( this );
@@ -365,11 +412,19 @@
       }
     }
 
+    // status doesnt not contain instruction
     if ( this.scent ) {
-      // send message to ControlPanel with this.scent
+      scent = this.scent;
+      status = scent.x + ' ' + scent.y + ' ' + scent.orientation + ' LOST';
     } else {
-      // send message with this.position
+      position = this.position;
+      status = position.x + ' ' + position.y + ' ' + position.orientation;
     }
+    this.notify({
+      name: 'status',
+      content: status
+    });
+
   });
 
 
@@ -386,5 +441,9 @@
 
   _w.ControlPanel = ControlPanel;
   _w.Robot = Robot;
+
+  _d.addEventListener( 'DOMContentLoaded', function(){
+    new ControlPanel();
+  });
 
 })( this, this.document );
