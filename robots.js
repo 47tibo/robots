@@ -4,9 +4,6 @@
     _F = _w.Function,
     _O = _w.Object,
 
-    // misc vars
-    i, j, l, lbis,
-
     // singletons, private
     __controlPanel, __mars;
 
@@ -54,7 +51,7 @@
   });
 
   Observable.method( 'indexOf', function indexOf( observable ) {
-    for ( i = 0, l = this.observables.length; i < l; i += 1 ) {
+    for ( var i = 0, l = this.observables.length; i < l; i += 1 ) {
       if ( observable === this.observables[ i ] ) {
         return i;
       }
@@ -81,7 +78,7 @@
   });
 
   Observable.method( 'notify', function notify( message ) {
-    for ( i = 0, l = this.observables.length; i < l; i += 1 ) {
+    for ( var i = 0, l = this.observables.length; i < l; i += 1 ) {
       this.observables[ i ].update( message );
     }
 
@@ -143,10 +140,10 @@
           tmpFieldSet, tmpRobot;
 
         // inform robots of Mars' dimensions - TODO sanitize
-        Robots.marsDimensions = marsDim;
+        Robot.marsDimensions = marsDim;
 
         // init Robots & send messages
-        for ( i = 0, l = robotsFieldSets.length; i < l; i += 1 ) {
+        for ( var i = 0, l = robotsFieldSets.length; i < l; i += 1 ) {
           tmpFieldSet = robotsFieldSets[ i ];
           // store ref to UI
           this.robotsFieldSets.push( tmpFieldSet );
@@ -155,7 +152,7 @@
           // store ref to robot - see reset()
           this.robots.push( tmpRobot );
           // TODO sanitize
-          tmpRobot.move( tmpFieldSet.querySelector( '#robot-position' ).value );
+          tmpRobot.move( tmpFieldSet.querySelector( '#robot-instruction' ).value );
         }
       }
 
@@ -184,8 +181,8 @@
       }
     });
     _O.defineProperty( this, 'scent', {
-      value: {}
-    });
+      writable: true
+    }); //undef
 
     // here observable code
   }
@@ -193,7 +190,7 @@
   // Robot static prop, only robots manage those tables, controlPanel dont have access
   _O.defineProperty( Robot, 'marsDimensions', {
     set: function( dimensions ) {
-      var dimensions = dimensions.split[' '];
+      var dimensions = dimensions.split(' ');
       this.marsX = dimensions[ 0 ];
       this.marsY = dimensions[ 1 ];
     }
@@ -264,7 +261,7 @@
       x = position.x,
       y = position.y;
 
-    return !!( x < 0 || x > this.marsX || y < 0 || y > this.marsY );
+    return !!( x < 0 || x > this.marsX || y < 0 || y > this.marsY );
   };
 
 
@@ -288,14 +285,14 @@
     // always keep orientation
     // default one step by one & forward (ie direction = 1)
     var
-      increment = options.increment || 1,
-      direction = options.direction || 1,
+      increment = (options && options.increment) || 1,
+      direction = (options && options.direction) || 1,
       dirChar = direction === 1 ? 'F' : 'B',
       nextPosition = this.nextPosition,
       // before moving, store scentPosition, just in case
       scentPosition = {};
 
-    for ( i in this.position ) {
+    for ( var i in this.position ) {
       scentPosition[ i ] = this.position[ i ];
     }
 
@@ -317,12 +314,12 @@
 
     if ( Robot.isInScentTable( nextPosition ) ) {
       // go a move backward
-      for ( i in this.position ) {
+      for ( var i in this.position ) {
         nextPosition[ i ] = this.position[ i ];
       }
     } else {
       // valid, move
-      for ( i in this.position ) {
+      for ( var i in this.position ) {
         this.position[ i ] = nextPosition[ i ];
       }
       // maybe lost for the first time? if so, store scent
@@ -346,11 +343,10 @@
     // store in case of lost
     this.instructionSequence = instructionSequence;
 
+    var j;
     // possible that the instruction equals the whole instructionSequence
-    for ( i = 0, l = instructionSequence.length; i < l; i += 1 ) {
-      j = i + 1;
-      lbis = l - i;
-      for ( ; j < lbis; j += 1 ) {
+    for ( var i = 0, l = instructionSequence.length; i < l; ) {
+      for ( j = i + 1; j < l + 1; j += 1 ) {
         instruction = instructionSequence.slice( i, j );
         if ( Robot.isInstruction( instruction ) ) {
           // move robot following the instruction => robot @ its new position (maybe lost?)
