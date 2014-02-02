@@ -140,10 +140,10 @@
       _O.defineProperty( this, 'startBtn', {
         writable: true
       });
-      _O.defineProperty( this, 'resetBtn', {
+      _O.defineProperty( this, 'outputTxt', {
         writable: true
       });
-      _O.defineProperty( this, 'outputTxt', {
+      _O.defineProperty( this, 'statusCount', {
         writable: true
       });
 
@@ -153,7 +153,6 @@
       this.robotsFieldSets = [].slice.call( _d.querySelectorAll( '.robot' ), 0),
       this.newRobotBtn = _d.querySelector( '#new-robot' );
       this.startBtn = _d.querySelector( '#start' );
-      this.resetBtn = _d.querySelector( '#reset' );
       this.outputTxt = _d.querySelector( '#output' );
 
       // events
@@ -177,10 +176,16 @@
         latestFieldSet.parentNode.insertBefore( newFieldSet, this.newRobotBtn );
       }.bind( this ));
 
+      // click on start
       this.start = function start(){
         var
           marsDim = this.marsTxt.value,
-          tmpFieldSet, tmpRobot;
+          tmpFieldSet, tmpRobot, tmpPosition;
+
+        // reset
+        this.output = '';
+        this.statusCount = 0;
+        Robot.initScentTable();
 
         // inform robots of Mars' dimensions - TODO sanitize
         Robot.marsDimensions = marsDim;
@@ -188,15 +193,22 @@
         // init robots
         for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
           tmpFieldSet = this.robotsFieldSets[ i ];
-          tmpRobot = new Robot( tmpFieldSet.querySelector( '#robot-position' ).value, i );
-          // store ref to robot - see reset()
-          this.robots.push( tmpRobot );
-          // control panel observes robot subjects for 'status'
-          tmpRobot.addObservable( this );
-          // each robot observes CP for 'instructions'
-          this.addObservable( tmpRobot );
+          tmpPosition = tmpFieldSet.querySelector( '#robot-position' ).value;
+          if ( this.robots[ i ] ) {
+            // already loaded -> reset robot
+            this.robots[ i ].reset( tmpPosition );
+          } else { // create brand new
+            tmpRobot = new Robot( tmpPosition, i );
+            // store ref to robot
+            this.robots.push( tmpRobot );
+            // control panel observes this robot for 'status'
+            tmpRobot.addObservable( this );
+            // this robot observes CP for 'instructions'
+            this.addObservable( tmpRobot );
+          }
         }
 
+        // launch instructions
         for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
           tmpFieldSet = this.robotsFieldSets[ i ];
           this.notify({
@@ -207,15 +219,15 @@
 
       }
 
-      var statusCount = 0;
-      // listen to any robot's status
+      // listen to any robot's status (one time)
       this.addUpdateFn( 'status', function updateOutput( status ){
         // all messages are received synchronously
         this.output += status + '\n';
-        statusCount += 1;
-        if ( statusCount === this.robots.length ) {
+        this.statusCount += 1;
+        if ( this.statusCount === this.robots.length ) {
           this.outputTxt.value = this.output;
         }
+
       });
 
 
@@ -271,9 +283,6 @@
       this.marsY = dimensions[ 1 ];
     }
   });
-  _O.defineProperty( Robot, 'scentTable', {
-    value: {}
-  });
   _O.defineProperty( Robot, 'instructionsTable', {
     value: {}
   });
@@ -284,6 +293,9 @@
   };
   Robot.isInstruction = function isInstruction( instruction ) {
     return !!this.instructionsTable.hasOwnProperty( instruction );
+  };
+  Robot.initScentTable = function initScentTable() {
+    this.scentTable = {};
   };
   Robot.isInScentTable = function isInScentTable( position ) {
     var
@@ -383,7 +395,7 @@
 
     if ( Robot.isLost( nextPosition ) ) {
       if ( !Robot.isInScentTable( this.position) ) { // robot dont recongnize scent -> lost
-        if ( !this.scent ) { // a robot can lost himself only 1 time
+        if ( !this.scent ) { // a robot can ONLY lost himself 1 time = could happen on instructions like '3B'
           this.scent = this.position;
           Robot.storeScent( this.position ); // update scents
         } //aleady lost
@@ -418,10 +430,10 @@
         if ( Robot.isInstruction( instruction ) ) {
           // move robot following the instruction => robot @ its new position (maybe lost?)
           Robot.instructionsTable[ instruction ].call( this );
-          // find another instruction in the seq
+          // switch to next instruction in the seq
           i = j;
           break;
-        } // else, enlarge search window
+        } // enlarge window
       }
       // if scent, no need to continue further in seq
       if ( this.scent ) {
@@ -442,6 +454,20 @@
       content: status
     });
 
+  });
+
+  Robot.method( 'reset', function reset( position ) {
+    var position = position.split(' ');
+    this.position.x = +position[ 0 ];
+    this.position.y = +position[ 1 ];
+    this.position.orientation = position[ 2 ];
+
+    this.nextPosition.x = +position[ 0 ];
+    this.nextPosition.y = +position[ 1 ];
+    this.nextPosition.orientation = position[ 2 ];
+
+    // reset scent if robot was lost previously
+    this.scent = undefined;
   });
 
 
