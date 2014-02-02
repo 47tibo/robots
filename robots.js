@@ -250,7 +250,10 @@
     });
     _O.defineProperty( this, 'scent', {
       writable: true
-    }); //undef
+    });
+    _O.defineProperty( this, 'rotateWheel', {
+      value: [ 'N', 'E', 'S', 'W' ]
+    });
 
     // listen to any 'instructions'
     this.addUpdateFn( 'instructions', function moveOnInstructions( instructions ){
@@ -329,18 +332,39 @@
   // basic moves - compute next position
   // increment: 3, -6
   Robot.method( 'rotate', function rotate( increment ){
-    // TODO
+    var orientation = this.rotateWheel.indexOf( this.position.orientation );
+
+    // orientation is rotateWheel's index
+    increment = increment % 4;
+    orientation += increment;
+
+    if ( orientation > 3 ) {
+      // orientation == 4,5,6 -> loop @ the beginning
+      orientation -= 4;
+    }
+    if ( orientation < 0 ) {
+      // orientation == -1, -2, -3 -> loop @ the end
+      orientation += 4;
+    }
+
+    // orientation is a letter
+    orientation = this.rotateWheel[ orientation ];
+    this.position.orientation = orientation;
+    // translate is done with nextPosition -> update too
+    this.nextPosition.orientation = orientation;
+
     return this;
   });
 
   // increment: 3, 6
   // direction 1 or -1 (forward / backward)
-  // default forward/1
+  // default forward & 1
   Robot.method( 'translate', function translate( options ){
     // always keep orientation
     // default one step by one & forward (ie direction = 1)
     var
       direction = (options && options.direction) || 1,
+      // here nextPosition === position
       nextPosition = this.nextPosition;
 
     if ( nextPosition.orientation === 'N' || nextPosition.orientation === 'S' ) {
@@ -358,10 +382,17 @@
     }
 
     if ( Robot.isLost( nextPosition ) ) {
-      if ( !Robot.isInScentTable( this.position ) ) {
-        this.scent = this.position; // robot lost himself, but "don't move"
-        Robot.storeScent( this.position ); // update scents
-      } // else, dont move
+      if ( !Robot.isInScentTable( this.position) ) { // robot dont recongnize scent -> lost
+        if ( !this.scent ) { // a robot can lost himself only 1 time
+          this.scent = this.position;
+          Robot.storeScent( this.position ); // update scents
+        } //aleady lost
+      } else {
+        // robot recognize scent -> reverse nextPosition for next move if any
+        for ( var i in this.position ) {
+          nextPosition[ i ] = this.position[ i ];
+        }
+      }
     } else {
       // valid, move
       for ( var i in this.position ) {
@@ -420,8 +451,20 @@
   Robot.addInstruction( 'F', function forward1(){
     this.translate();
   });
+  Robot.addInstruction( 'B', function backward1(){
+    this.translate( { direction: -1 } );
+  });
   Robot.addInstruction( '3B', function backward3(){
     this.translate( { increment: 3, direction: -1 } );
+  });
+  Robot.addInstruction( 'L', function left1(){
+    this.rotate( -1 );
+  });
+  Robot.addInstruction( '3R', function right3(){
+    this.rotate( 3 );
+  });
+  Robot.addInstruction( 'R', function right1(){
+    this.rotate( 1 );
   });
 
 
