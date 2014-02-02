@@ -577,9 +577,11 @@
   });
 
 
-  // DEBUG
-  // now create instructions using moves; 'this' is a robot instance
-  // constraint: must start with a different letter
+  // "API"
+  // create instructions using basic moves; 'this' is a robot instance
+  // constraints:
+  // - max 2 char
+  // - if 2 char, MUST be number + letter, eg 3B
   Robot.addInstruction( 'F', function forward1(){
     this.translate();
   });
