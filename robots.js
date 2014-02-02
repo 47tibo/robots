@@ -193,7 +193,7 @@
 
         if ( !this.sane ) {
           txtField.style.backgroundColor = 'red';
-          marsDim = '50 50'; // for next checks
+          marsDim = '50 50'; // for next checks, max values
         } else {
           txtField.style.backgroundColor = '';
         }
@@ -226,6 +226,41 @@
         }
 
         return position;
+      };
+
+      this.sanitizeInstructions = function sanitizeInstructions( elem ) {
+        var instructions = elem.value.trim();
+
+        if ( instructions.length > 100 ) {
+          this.sane = false;
+        }
+
+        for ( var i = 0; i < instructions.length ; i += 1 ) {
+          // one instruction is limited to 2 char in length, eg 'F' or '3F' but not 'FORWARD'
+          // ALWAYS put number BEFORE letter
+          for ( var j = i + 1, l = i + 3; j < l; j += 1 ) {
+            if ( !Robot.isInstruction( instructions.slice( i, j ) ) ) {
+              if ( isNaN( +instructions.slice( i, j ) ) ) {
+                this.sane = false;
+                break
+              } // else, on a number, lets see the 2nd char
+            } else {
+              i = j;
+              break;
+            }
+          }
+          if ( !this.sane ) {
+            break;
+          }
+        }
+
+        if ( !this.sane ) {
+          elem.style.backgroundColor = 'red';
+        } else {
+          elem.style.backgroundColor = '';
+        }
+
+        return instructions;
       };
 
       // click on start
@@ -262,6 +297,16 @@
           }
         }
 
+        // check sane of each instructions for each bot
+        var elemnt;
+        if ( this.sane ) {
+          for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
+            elemnt = this.robotsFieldSets[ i ].querySelector( '#robot-instruction' );
+            this.robotsFieldSets[ i ].querySelector( '#robot-instruction' ).value = this.sanitizeInstructions( elemnt );
+          }
+        }
+
+        // @ this point we're sure of sanity
         if ( this.sane ) {
           // launch instructions
           for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
@@ -284,6 +329,8 @@
         }
 
       });
+
+
 
       __controlPanel = this;
     }
