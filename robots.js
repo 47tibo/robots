@@ -598,10 +598,11 @@
   Robot.addInstruction( 'R', function right1(){
     this.rotate( 1 );
   });
+  // possible to chain moves!!!
+  Robot.addInstruction( 'X', function x(){
+    this.rotate( 1 ).translate();
+  });
 
-
-  _w.ControlPanel = ControlPanel;
-  _w.Robot = Robot;
 
   _d.addEventListener( 'DOMContentLoaded', function(){
     new ControlPanel();
