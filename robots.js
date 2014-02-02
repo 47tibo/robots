@@ -204,22 +204,27 @@
       this.sanitizePosition = function sanitizePosition( fieldSet ) {
         var elem = fieldSet.querySelector( '#robot-position' ),
           position = elem.value.trim(),
-          check = position.split(' ');
+          check = position.split(' '),
+          localSane = true;
         if ( isNaN( +check[ 0 ] ) || isNaN( +check[ 1 ] ) ) {
           this.sane = false;
+          localSane = false;
         } else {
           if ( +check[ 0 ] > Robot.marsDimensions[ 0 ] || +check[ 0 ] < 0 ) {
             this.sane = false;
+            localSane = false;
           }
           if ( +check[ 1 ] > Robot.marsDimensions[ 1 ] || +check[ 1 ] < 0 ) {
             this.sane = false;
+            localSane = false;
           }
         }
         if ( 'NESW'.indexOf( check[ 2 ] ) < 0 ) {
           this.sane = false;
+          localSane = false;
         }
 
-        if ( !this.sane ) {
+        if ( !localSane ) {
           elem.style.backgroundColor = 'red';
         } else {
           elem.style.backgroundColor = '';
@@ -229,19 +234,22 @@
       };
 
       this.sanitizeInstructions = function sanitizeInstructions( elem ) {
-        var instructions = elem.value.trim();
+        var instructions = elem.value.trim(),
+          localSane = true;
 
         if ( instructions.length > 100 ) {
           this.sane = false;
+          localSane = false;
         }
 
-        for ( var i = 0; i < instructions.length ; i += 1 ) {
+        for ( var i = 0; i < instructions.length ; ) {
           // one instruction is limited to 2 char in length, eg 'F' or '3F' but not 'FORWARD'
           // ALWAYS put number BEFORE letter
           for ( var j = i + 1, l = i + 3; j < l; j += 1 ) {
             if ( !Robot.isInstruction( instructions.slice( i, j ) ) ) {
               if ( isNaN( +instructions.slice( i, j ) ) ) {
                 this.sane = false;
+                localSane = false;
                 break;
               } // else, on a number, lets see the 2nd char
             } else {
@@ -249,12 +257,12 @@
               break;
             }
           }
-          if ( !this.sane ) {
+          if ( !localSane ) {
             break;
           }
         }
 
-        if ( !this.sane ) {
+        if ( !localSane ) {
           elem.style.backgroundColor = 'red';
         } else {
           elem.style.backgroundColor = '';
@@ -299,11 +307,9 @@
 
         // check sane of each instructions for each bot
         var elemnt;
-        if ( this.sane ) {
-          for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
-            elemnt = this.robotsFieldSets[ i ].querySelector( '#robot-instruction' );
-            this.robotsFieldSets[ i ].querySelector( '#robot-instruction' ).value = this.sanitizeInstructions( elemnt );
-          }
+        for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
+          elemnt = this.robotsFieldSets[ i ].querySelector( '#robot-instruction' );
+          this.robotsFieldSets[ i ].querySelector( '#robot-instruction' ).value = this.sanitizeInstructions( elemnt );
         }
 
         // @ this point we're sure of sanity
