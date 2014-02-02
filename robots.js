@@ -286,20 +286,12 @@
     var
       x = position.x,
       y = position.y,
-      orientation = position.orientation,
-      instruction = position.instruction,
       pointer;
 
     if ( this.scentTable[ x ] ) {
       pointer = this.scentTable[ x ];
       if ( pointer[ y ] ) {
-        pointer = pointer[ y ];
-        if ( pointer[ orientation ] ) {
-          pointer = pointer[ orientation ];
-          if ( pointer[ instruction ] ) {
-            return true;
-          }
-        }
+        return true;
       }
     }
     return false;
@@ -308,8 +300,6 @@
     var
       x = position.x,
       y = position.y,
-      orientation = position.orientation,
-      instruction = position.instruction,
       pointer;
 
     if ( !this.scentTable[ x ] ) {
@@ -319,16 +309,6 @@
 
     if ( !pointer[ y ] ) {
       pointer[ y ] = {};
-    }
-    pointer = pointer[ y ];
-
-    if ( !pointer[ orientation ] ) {
-      pointer[ orientation ] = {};
-    }
-    pointer = pointer[ orientation ];
-
-    if ( !pointer[ instruction ] ) {
-      pointer[ instruction ] = {};
     }
   };
   Robot.isLost = function isLost( position ) {
@@ -361,16 +341,7 @@
     // default one step by one & forward (ie direction = 1)
     var
       direction = (options && options.direction) || 1,
-      dirChar = direction === 1 ? 'F' : 'B',
-      nextPosition = this.nextPosition,
-      // before moving, store scentPosition, just in case
-      scentPosition = {};
-
-    for ( var i in this.position ) {
-      scentPosition[ i ] = this.position[ i ];
-    }
-
-    nextPosition.instruction = dirChar;
+      nextPosition = this.nextPosition;
 
     if ( nextPosition.orientation === 'N' || nextPosition.orientation === 'S' ) {
       if ( nextPosition.orientation === 'N' ) {
@@ -386,22 +357,15 @@
       }
     }
 
-    if ( Robot.isInScentTable( nextPosition ) ) {
-      // go a move backward
-      for ( var i in this.position ) {
-        nextPosition[ i ] = this.position[ i ];
-      }
+    if ( Robot.isLost( nextPosition ) ) {
+      if ( !Robot.isInScentTable( this.position ) ) {
+        this.scent = this.position; // robot lost himself, but "don't move"
+        Robot.storeScent( this.position ); // update scents
+      } // else, dont move
     } else {
       // valid, move
       for ( var i in this.position ) {
         this.position[ i ] = nextPosition[ i ];
-      }
-      // maybe lost for the first time? if so, store scent
-      if ( !this.scent && Robot.isLost( this.position ) ) {
-        Robot.storeScent( scentPosition );
-        this.scent = scentPosition;
-        // here possible to notify too
-        // then we left the robot continues its move
       }
     }
 
