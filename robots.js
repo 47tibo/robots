@@ -316,6 +316,8 @@
               content: { val: tmpFieldSet.querySelector( '#robot-instruction' ).value, id: i }
             });
           }
+        } else {
+          alert( 'Some fields are wrong, please check params' );
         }
       }; // start
 
