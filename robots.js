@@ -5,7 +5,7 @@
     _O = _w.Object,
 
     // singletons, private
-    __controlPanel, __mars;
+    __controlPanel;
 
   // -- extends Function for inheritance mechanisms
   // D. Crockford 'method' sugar
@@ -184,11 +184,11 @@
         var marsDim = txtField.value.trim(),
           check = marsDim.split(' ');
         for ( var i = 0; i < 2; i += 1 ) {
-            if ( isNaN( +check[ i ] ) ) {
-              this.sane = false;
-            } else if ( +check[ i ] < 0 || +check[ i ] > 50 ) {
-              this.sane = false;
-            }
+          if ( isNaN( +check[ i ] ) ) {
+            this.sane = false;
+          } else if ( +check[ i ] < 0 || +check[ i ] > 50 ) {
+            this.sane = false;
+          }
         }
 
         if ( !this.sane ) {
@@ -242,7 +242,7 @@
             if ( !Robot.isInstruction( instructions.slice( i, j ) ) ) {
               if ( isNaN( +instructions.slice( i, j ) ) ) {
                 this.sane = false;
-                break
+                break;
               } // else, on a number, lets see the 2nd char
             } else {
               i = j;
@@ -317,7 +317,7 @@
             });
           }
         } else {
-          alert( 'Some fields are wrong, please check params' );
+          _w.alert( 'Some fields are wrong, please check params' );
         }
       }; // start
 
@@ -340,7 +340,7 @@
   }
 
   function Robot( position, id ) {
-    var position = position.split(' ');
+    position = position.split(' ');
 
     this.uber.init.call( this );
 
@@ -563,7 +563,7 @@
   });
 
   Robot.method( 'reset', function reset( position ) {
-    var position = position.split(' ');
+    position = position.split(' ');
     this.position.x = +position[ 0 ];
     this.position.y = +position[ 1 ];
     this.position.orientation = position[ 2 ];
