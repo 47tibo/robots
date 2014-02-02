@@ -146,6 +146,9 @@
       _O.defineProperty( this, 'statusCount', {
         writable: true
       });
+      _O.defineProperty( this, 'sane', {
+        writable: true
+      });
 
       // UI
       this.marsTxt = _d.querySelector( '#mars-dimensions' );
@@ -176,48 +179,100 @@
         latestFieldSet.parentNode.insertBefore( newFieldSet, this.newRobotBtn );
       }.bind( this ));
 
+      // sanitization
+      this.sanitizeMarsDim = function sanitizeMarsDim( txtField ) {
+        var marsDim = txtField.value.trim(),
+          check = marsDim.split(' ');
+        for ( var i = 0; i < 2; i += 1 ) {
+            if ( isNaN( +check[ i ] ) ) {
+              this.sane = false;
+            } else if ( +check[ i ] < 0 || +check[ i ] > 50 ) {
+              this.sane = false;
+            }
+        }
+
+        if ( !this.sane ) {
+          txtField.style.backgroundColor = 'red';
+          marsDim = '50 50'; // for next checks
+        } else {
+          txtField.style.backgroundColor = '';
+        }
+
+        return marsDim;
+      };
+
+      this.sanitizePosition = function sanitizePosition( fieldSet ) {
+        var elem = fieldSet.querySelector( '#robot-position' ),
+          position = elem.value.trim(),
+          check = position.split(' ');
+        if ( isNaN( +check[ 0 ] ) || isNaN( +check[ 1 ] ) ) {
+          this.sane = false;
+        } else {
+          if ( +check[ 0 ] > Robot.marsDimensions[ 0 ] || +check[ 0 ] < 0 ) {
+            this.sane = false;
+          }
+          if ( +check[ 1 ] > Robot.marsDimensions[ 1 ] || +check[ 1 ] < 0 ) {
+            this.sane = false;
+          }
+        }
+        if ( 'NESW'.indexOf( check[ 2 ] ) < 0 ) {
+          this.sane = false;
+        }
+
+        if ( !this.sane ) {
+          elem.style.backgroundColor = 'red';
+        } else {
+          elem.style.backgroundColor = '';
+        }
+
+        return position;
+      };
+
       // click on start
       this.start = function start(){
         var
-          marsDim = this.marsTxt.value,
           tmpFieldSet, tmpRobot, tmpPosition;
 
         // reset
+        this.sane = true;
         this.output = '';
         this.statusCount = 0;
         Robot.initScentTable();
 
-        // inform robots of Mars' dimensions - TODO sanitize
-        Robot.marsDimensions = marsDim;
+        // inform robots of Mars' dimensions
+        Robot.marsDimensions = this.sanitizeMarsDim( this.marsTxt );
 
         // init robots
         for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
           tmpFieldSet = this.robotsFieldSets[ i ];
-          tmpPosition = tmpFieldSet.querySelector( '#robot-position' ).value;
-          if ( this.robots[ i ] ) {
-            // already loaded -> reset robot
-            this.robots[ i ].reset( tmpPosition );
-          } else { // create brand new
-            tmpRobot = new Robot( tmpPosition, i );
-            // store ref to robot
-            this.robots.push( tmpRobot );
-            // control panel observes this robot for 'status'
-            tmpRobot.addObservable( this );
-            // this robot observes CP for 'instructions'
-            this.addObservable( tmpRobot );
+          tmpPosition = this.sanitizePosition( tmpFieldSet );
+          if ( this.sane ) {
+            if ( this.robots[ i ] ) {
+              // already loaded -> reset robot
+              this.robots[ i ].reset( tmpPosition );
+            } else { // create brand new
+              tmpRobot = new Robot( tmpPosition, i );
+              // store ref to robot
+              this.robots.push( tmpRobot );
+              // control panel observes this robot for 'status'
+              tmpRobot.addObservable( this );
+              // this robot observes CP for 'instructions'
+              this.addObservable( tmpRobot );
+            }
           }
         }
 
-        // launch instructions
-        for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
-          tmpFieldSet = this.robotsFieldSets[ i ];
-          this.notify({
-            name: 'instructions',
-            content: { val: tmpFieldSet.querySelector( '#robot-instruction' ).value, id: i }
-          });
+        if ( this.sane ) {
+          // launch instructions
+          for ( var i = 0, l = this.robotsFieldSets.length; i < l; i += 1 ) {
+            tmpFieldSet = this.robotsFieldSets[ i ];
+            this.notify({
+              name: 'instructions',
+              content: { val: tmpFieldSet.querySelector( '#robot-instruction' ).value, id: i }
+            });
+          }
         }
-
-      }
+      }; // start
 
       // listen to any robot's status (one time)
       this.addUpdateFn( 'status', function updateOutput( status ){
@@ -229,7 +284,6 @@
         }
 
       });
-
 
       __controlPanel = this;
     }
@@ -281,6 +335,9 @@
       dimensions = dimensions.split(' ');
       this.marsX = dimensions[ 0 ];
       this.marsY = dimensions[ 1 ];
+    },
+    get: function() {
+      return [ this.marsX, this.marsY ];
     }
   });
   _O.defineProperty( Robot, 'instructionsTable', {
