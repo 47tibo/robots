@@ -1,4 +1,4 @@
-#Simple Robots Game
+#Robots Game
 
 ##Live Demo
 [here](http://tcamp.fr/test/robots/)
