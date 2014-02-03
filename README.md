@@ -17,14 +17,14 @@
  - Params are checked in number and type, depending on the field. For example, for Mars dimensions, the ControlPanel
  will check for two numbers in the range between 0 and 50. Of course only instructions specified by user are allowed
  - To add a new instruction:
-  ```javascript
-  Robot.addInstruction( 'X', function x(){
-    // 'this' is a robot instance, moves are chainable
-    this.rotate( 1 ).translate();
-  });
-  ```
+```javascript
+Robot.addInstruction( 'X', function x(){
+  // 'this' is a robot instance, moves are chainable
+  this.rotate( 1 ).translate();
+});
+```
   Instruction name constraints:
     - max 2 characters
-    - if 2 characters, if 2 char must be number + letter, eg '3B', for 3 times backward
+    - if 2 characters, must be number + letter, eg '3B', for 3 times backward
 
 
