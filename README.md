@@ -9,5 +9,5 @@
   a `addUpdateFn()`  and  `notify()` methods. This follow the Observer pattern.
   - The ControlPanel is linked to the UI. It allows to retrieve user's params properly, handle Robots (create new ones, send messages, retrieve Robots' status) and finally display results.
   - The Robot interface is splited in two parts: static properties, eg `addInstruction()`, which are common to all
-  robots, kind of a "robots control center" and instance properties, like `nextPosition` or `move()̀
+  robots, kind of a "robots control center" and instance properties, like `nextPosition` or `move()`  
   - Instructions are based on two basic moves, `rotate` and `translate`
