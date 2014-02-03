@@ -24,8 +24,8 @@ Robot.addInstruction( 'X', function x(){
 });
 ```
 **Moves:**
-  - `translate()̀: one step forward
-  - `translate({ increment: 3, direction: -1 })̀: 3 steps backward
+  - `translate()`: one step forward
+  - `translate( { increment: 3, direction: -1 } )` : 3 steps backward
   - `rotate( 1 )`: turn right one time
 *see code for more details*
 **Instructions' names constraints:**
