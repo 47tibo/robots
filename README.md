@@ -23,8 +23,13 @@ Robot.addInstruction( 'X', function x(){
   this.rotate( 1 ).translate();
 });
 ```
-  Instruction name constraints:
-    - max 2 characters
-    - if 2 characters, must be number + letter, eg '3B', for 3 times backward
+**Moves:**
+  - `translate()̀: one step forward
+  - `translate({ increment: 3, direction: -1 })̀: 3 steps backward
+  - `rotate( 1 )`: turn right one time
+*see code for more details*
+**Instructions' names constraints:**
+  - max 2 characters
+  - if 2 characters, must be number + letter, eg '3B', for *3 times backward*
 
 
