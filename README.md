@@ -27,7 +27,8 @@ Robot.addInstruction( 'X', function x(){
   - `translate()`: one step forward
   - `translate( { increment: 3, direction: -1 } )` : 3 steps backward
   - `rotate( 1 )`: turn right one time
-*see code for more details*
+  - *see code for details*
+
 **Instructions' names constraints:**
   - max 2 characters
   - if 2 characters, must be number + letter, eg '3B', for *3 times backward*
