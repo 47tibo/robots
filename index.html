@@ -2,25 +2,32 @@
 <html>
 <head>
   <title>Robots Rock</title>
-  <script type="text/javascript" src="robots.js"></script>
+  <link rel="stylesheet" type="text/css" href="robots.css">
 </head>
 <body>
-<h1>Robots Rock application</h1>
-<h2>Robots</h2>
-<form>
-  <label for="mars-dimensions">Mars Dimensions</label>
-  <input id="mars-dimensions" type="text"></input>
-  <fieldset class="robot" id="robot-0">
-    <legend>Robot 0</legend>
-    <label for="robot-position">Position</label>
-    <input id="robot-position" type="text"></input>
-    <label for="robot-instruction">Instruction</label>
-    <input id="robot-instruction" type="text"></input>
-  </fieldset>
-  <button id="new-robot">New Robot</button>
-  <button id="start">Start</button>
-</form>
-<h2>Output</h2>
-<textarea id="output"></textarea>
+  <article>
+    <h1>Robots Rock application</h1>
+    <section>
+      <h2>Robots</h2>
+      <form>
+        <label for="mars-dimensions">Mars Dimensions</label>
+        <input id="mars-dimensions" type="text"></input>
+        <fieldset class="robot" id="robot-0">
+          <legend>Robot 0</legend>
+          <label for="robot-position">Position</label>
+          <input id="robot-position" type="text"></input>
+          <label for="robot-instruction">Instruction</label>
+          <input id="robot-instruction" type="text"></input>
+        </fieldset>
+        <button id="new-robot">New Robot</button>
+        <button id="start">Start</button>
+      </form>
+    </section>
+    <section>
+      <h2>Output</h2>
+      <textarea id="output"></textarea>
+    </section>
+  </article>
+  <script type="text/javascript" src="robots.js"></script>
 </body>
 </html>

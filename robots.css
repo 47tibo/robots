@@ -1,0 +1,25 @@
+body {
+  background: #ffffff url('daft.jpg') left top;
+  top: 0;
+  left: 0;
+}
+
+section {
+  float: left;
+  width: 60%;
+}
+
+section + section {
+  width: 30%;
+  margin-left: 10px;
+
+}
+
+#robot-instruction {
+  width: 50%;
+}
+
+#output {
+  height: 300px;
+  width: 70%;
+}
